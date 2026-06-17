@@ -14,6 +14,8 @@ import pubsub.PubSub;
 public final class Client {
     private Client(){};
     static public PubSub init(String host, String port) throws RemoteException, NotBoundException {
-        return null;
+        Registry regis= LocateRegistry.getRegistry(host, Integer.parseInt(port));
+        PubSub srv= (PubSub) regis.lookup("Remoto");
+        return srv;
     }
 }

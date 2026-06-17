@@ -10,5 +10,7 @@ import pubsub.PubSub;
 public final class Server {
     private Server(){};
     static void init(PubSub pubsub, String port) throws RemoteException {
+        Registry reg = LocateRegistry.getRegistry(Integer.parseInt(port));
+        reg.rebind("Remoto", pubsub);
     }
 }

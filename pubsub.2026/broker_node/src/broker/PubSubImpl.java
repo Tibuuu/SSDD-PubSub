@@ -5,7 +5,12 @@ import java.rmi.NoSuchObjectException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.lang.Object;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import pubsub.Event;
 import pubsub.PubSub;
 import pubsub.Subscriber;
@@ -13,6 +18,7 @@ import pubsub.SubscriberCallback;
 
 class PubSubImpl extends UnicastRemoteObject implements PubSub  {
     public static final long serialVersionUID=1234567890L;
+    Map<String, Topic> topics= new HashMap<String, Topic>();
 
     public PubSubImpl() throws RemoteException {
     }
@@ -20,16 +26,32 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
         return version;
     }
     public synchronized boolean createTopic(String topic) throws RemoteException {
-        return false;
+        if(topics.containsKey(topic))
+            return false;
+        Topic top = new Topic(topic);
+        topics.put(topic, top);
+        return true;
     }
     public synchronized Collection<String> topicList() throws RemoteException {
-        return null;
+        Iterator<String> list =topics.keySet().iterator();
+        Collection <String> res = new LinkedList<String>();
+        while(list.hasNext()){
+            res.add(list.next());
+        }
+        return res;
     }
     public synchronized boolean publish(Event ev) throws RemoteException {
-        return false;
+            Topic top= topics.get(ev.getTopic());
+            if(top!=null)
+                return top.enqueue(ev);
+            return false;
     }
     public synchronized Event consumeEvent(String topic) throws RemoteException {
-        return null;
+            if(!topics.containsKey(topic))
+                throw new NoSuchObjectException("consumeEvent: no such topic");
+        Topic top= topics.get(topic);
+        return top.yumTopic();
+
     }
     public synchronized Subscriber initSubscriber(SubscriberCallback c) throws RemoteException {
         return null;

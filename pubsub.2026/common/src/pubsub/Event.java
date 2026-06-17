@@ -2,8 +2,8 @@
 // NO MODIFICAR
 package pubsub;
 import java.io.Serializable;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class Event implements Serializable {
     public static final long serialVersionUID=1234567890L;
@@ -19,6 +19,8 @@ public class Event implements Serializable {
     public Map <String,Object> getContent() {
         return content;
     }
+
+    @Override
     public String toString() {
         return "topic = <" + topic + "> content = <" + content + ">";
     }
