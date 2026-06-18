@@ -11,14 +11,17 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.Flow;
 import pubsub.Event;
 import pubsub.PubSub;
 import pubsub.Subscriber;
 import pubsub.SubscriberCallback;
+import java.util.UUID;
 
 class PubSubImpl extends UnicastRemoteObject implements PubSub  {
     public static final long serialVersionUID=1234567890L;
     Map<String, Topic> topics= new HashMap<String, Topic>();
+    Map<UUID, SubscriberImpl> subs= new HashMap<UUID, SubscriberImpl>();
 
     public PubSubImpl() throws RemoteException {
     }
@@ -30,7 +33,18 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
             return false;
         Topic top = new Topic(topic);
         topics.put(topic, top);
+        
+        Iterator<UUID> subList= subs.keySet().iterator();
+        //Collection <UUID> res = new LinkedList<UUID>();
+        while(subList.hasNext()){
+            try{
+            subs.get(subList.next()).notifNewTopic(topic);
+            } catch(Exception e){
+                System.err.println("createTopic: notif failed");
+            }
+        }
         return true;
+
     }
     public synchronized Collection<String> topicList() throws RemoteException {
         Iterator<String> list =topics.keySet().iterator();
@@ -54,10 +68,12 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
 
     }
     public synchronized Subscriber initSubscriber(SubscriberCallback c) throws RemoteException {
-        return null;
+        SubscriberImpl newSub = new SubscriberImpl(this, c);
+        subs.put(newSub.getUUID(),newSub);
+        return newSub;
     }
     public synchronized Collection<Subscriber> subscriberList() throws RemoteException {
-        return null;
+        return new LinkedList<Subscriber>(subs.values());
     }
     public synchronized Collection<Subscriber> subscriberListByTopic(String topic) throws RemoteException {
         return null;

@@ -13,6 +13,7 @@ import pubsub.Event;
 
 class SubscriberImpl extends UnicastRemoteObject implements Subscriber  {
     public static final long serialVersionUID=1234567890L;
+    
     UUID subUUID; // para facilitar depuración
     PubSubImpl ps; // para acceder a funcionalidad del servicio general
     // para notificar al subscriptor de creación y destrucción de temas
@@ -21,7 +22,7 @@ class SubscriberImpl extends UnicastRemoteObject implements Subscriber  {
     public SubscriberImpl(PubSubImpl p, SubscriberCallback s) throws RemoteException {
         scbk=s;
         subUUID = UUID.randomUUID();
-	ps=p;
+	    ps=p;
     }
     public UUID getUUID() throws RemoteException {
         return subUUID;
@@ -39,5 +40,9 @@ class SubscriberImpl extends UnicastRemoteObject implements Subscriber  {
         return true;
     }
     public void exit() throws RemoteException {
+    }
+    public void notifNewTopic(String topic) throws RemoteException{
+        if(scbk!=null)
+            scbk.topicAdded(topic);
     }
 }
