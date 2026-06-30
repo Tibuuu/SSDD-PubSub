@@ -56,10 +56,19 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
     }
     public synchronized boolean publish(Event ev) throws RemoteException {
             Topic top= topics.get(ev.getTopic());
-            if(top!=null)
-                return top.enqueue(ev);
-            return false;
+            if(top==null)
+                return false;
+            top.enqueue(ev);
+            Iterator<Subscriber> subIt= subscriberListByTopic(ev.getTopic()).iterator();
+            while(subIt.hasNext()){
+                SubscriberImpl sub= (SubscriberImpl) subIt.next();
+                sub.addEvent(ev);
+            }
+            return true;
+
     }
+
+    
     public synchronized Event consumeEvent(String topic) throws RemoteException {
             if(!topics.containsKey(topic))
                 throw new NoSuchObjectException("consumeEvent: no such topic");
@@ -72,14 +81,40 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
         subs.put(newSub.getUUID(),newSub);
         return newSub;
     }
+
+    public Topic getTopic(String Top_name){
+        return topics.get(Top_name);
+    }
+
     public synchronized Collection<Subscriber> subscriberList() throws RemoteException {
         return new LinkedList<Subscriber>(subs.values());
     }
     public synchronized Collection<Subscriber> subscriberListByTopic(String topic) throws RemoteException {
-        return null;
+        Topic top = topics.get(topic);
+        if(top==null)
+            return null;
+        return top.getSubs();
+    }
+    public synchronized void removeSub(SubscriberImpl sub){
+        subs.remove(sub.subUUID);
     }
     public synchronized boolean deleteTopic(String topic) throws RemoteException {
-       return false;
+        Topic top= topics.get(topic);
+        if(top==null)
+            return false;
+        for(SubscriberImpl sub : subs.values()){
+            try {
+                sub.notifRemovedTopic(topic);
+            } catch (Exception e) {
+                System.err.println("deleteTopic: not failed");
+            }
+        }
+        for(Subscriber s : new LinkedList<>(top.getSubs())){
+            ((SubscriberImpl) s).unsubscribe(topic);
+        }
+        top.getSubs().clear();
+        topics.remove(topic);
+        return true;
     }
     static public void main (String args[])  {
         if (args.length!=1) {
@@ -95,4 +130,5 @@ class PubSubImpl extends UnicastRemoteObject implements PubSub  {
             System.exit(1);
         }
     }
+
 }
